@@ -45,6 +45,8 @@ selectedplate = st.selectbox("Select plate", indipl.split("\n")) # ["INDI00003D"
 image_path_list = []
 actual_path_list = []
 all_image_path_list = []
+cellpose_path_list = []
+cellpose_path_list_act = []
 for msett in marker_set:
     list_of_image_folders = os.listdir(root_folder  + "/" + msett)
     for img_folder in list_of_image_folders: # [:20]:
@@ -54,6 +56,14 @@ for msett in marker_set:
         if selectedplate in fullpath:
             image_path_list.append(fullpath + '/actualImage.png')
             actual_path_list.append(fullpath + '/segmentedImage.png')
+            cellpose_path_list.append(fullpath + '/cellposeSegmentedImage.png')
+            cellpose_path_list_act.append(fullpath + '/cellposeActualImage.png')
+
+
+dfg = pd.DataFrame({"image_path_list": image_path_list, "actual_path_list": actual_path_list,
+                    "cellpose_path_list": cellpose_path_list, "cellpose_path_list_act": cellpose_path_list_act})
+
+# dfg['newname'] = df["image_path_list"].map(lambda x: os.path.basename(x).replace("A1", "A01"))
 
 
 
@@ -81,13 +91,21 @@ if True:
 
     num_page = st.slider('page', 0, len(image_path_list)-1, 0, key='slider')
     # for num_page, img_folder in enumerate(list_of_image_folders):
+    if os.path.exists(cellpose_path_list[num_page]):
+        selc = st.checkbox("View DAPI channel (only)")
     if True:
         col3, col4 = st.columns([1, 1])
-        col4.write("Dapi segmented image")
+        col4.write("Cellprofiler segmented image")
         col3.write(os.path.basename(Path(actual_path_list[num_page]).parent))
         target_image_path = image_path_list[num_page]
         col4.image(actual_path_list[num_page])
         col3.image(image_path_list[num_page])
+        if os.path.exists(cellpose_path_list[num_page]):
+            col4.write("Cellpose segmented image")
+            col4.image(cellpose_path_list[num_page])
+            if selc:
+                col3.write("Just DAPI channel")
+                col3.image(cellpose_path_list_act[num_page])
 
     
     # st.json(st.session_state['result_dict'])
