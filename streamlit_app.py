@@ -92,7 +92,7 @@ if True:
     num_page = st.slider('page', 0, len(image_path_list)-1, 0, key='slider')
     # for num_page, img_folder in enumerate(list_of_image_folders):
     if os.path.exists(cellpose_path_list[num_page]):
-        selc = st.checkbox("View DAPI channel (only)")
+        selc = st.checkbox("View Blue channel (only)")
     if True:
         col3, col4 = st.columns([1, 1])
         col4.write("Cellprofiler segmented image")
