@@ -13,55 +13,75 @@ import json
 # st.set_page_config(layout="wide")
 
 root_folder = "Visualization_DAPI_INSPECTION"
-root_folder = "Dec29_60X_OME-TIFFs_Visualization_DAPI_INSPECTION"
 
-marker_set = os.listdir(root_folder)
-# col3.title("DAPI Segmented Image")
-# col4.title("DAPI Raw Image")
-
-indipl = """INDI00002D
-INDI00003D
-INDI00005D
-INDI00006D
-INDI00008D
-INDI00009D
-INDI00010D
-INDI00011D
-INDI00019D
-INDI00012D
-INDI00013D
-INDI00014D
-INDI00015D
-INDI00016D
-INDI00017D
-INDI00018D"""
-
-selectedplate = st.selectbox("Select plate", indipl.split("\n")) # ["INDI00003D", "INDI00004D", "INDI00005D", "INDI00007D"]
+selectchannel = st.selectbox("Select channel", ["DAPI", "NEFL"])
 
 
 # mset = st.selectbox("Select marker set", marker_set)
 
+if selectchannel == "DAPI":
+    root_folder = "Dec29_60X_OME-TIFFs_Visualization_DAPI_INSPECTION"
+    marker_set = os.listdir(root_folder)
+    # col3.title("DAPI Segmented Image")
+    # col4.title("DAPI Raw Image")
 
-image_path_list = []
-actual_path_list = []
-all_image_path_list = []
-cellpose_path_list = []
-cellpose_path_list_act = []
-for msett in marker_set:
-    list_of_image_folders = os.listdir(root_folder  + "/" + msett)
-    for img_folder in list_of_image_folders: # [:20]:
-        fullpath = root_folder  + "/" + msett + "/" + img_folder
-        if selectedplate in fullpath:
-            all_image_path_list.append(fullpath + '/actualImage.png')
-        if selectedplate in fullpath:
-            image_path_list.append(fullpath + '/actualImage.png')
-            actual_path_list.append(fullpath + '/segmentedImage.png')
-            cellpose_path_list.append(fullpath + '/cellposeSegmentedImage.png')
-            cellpose_path_list_act.append(fullpath + '/cellposeActualImage.png')
+    indipl = """INDI00002D
+    INDI00003D
+    INDI00005D
+    INDI00006D
+    INDI00008D
+    INDI00009D
+    INDI00010D
+    INDI00011D
+    INDI00019D
+    INDI00012D
+    INDI00013D
+    INDI00014D
+    INDI00015D
+    INDI00016D
+    INDI00017D
+    INDI00018D"""
+
+    selectedplate = st.selectbox("Select plate",
+                                 indipl.split("\n"))  # ["INDI00003D", "INDI00004D", "INDI00005D", "INDI00007D"]
 
 
-dfg = pd.DataFrame({"image_path_list": image_path_list, "actual_path_list": actual_path_list,
-                    "cellpose_path_list": cellpose_path_list, "cellpose_path_list_act": cellpose_path_list_act})
+    image_path_list = []
+    actual_path_list = []
+    all_image_path_list = []
+    cellpose_path_list = []
+    cellpose_path_list_act = []
+    for msett in marker_set:
+        list_of_image_folders = os.listdir(root_folder  + "/" + msett)
+        for img_folder in list_of_image_folders: # [:20]:
+            fullpath = root_folder  + "/" + msett + "/" + img_folder
+            if selectedplate in fullpath:
+                all_image_path_list.append(fullpath + '/actualImage.png')
+            if selectedplate in fullpath:
+                image_path_list.append(fullpath + '/actualImage.png')
+                actual_path_list.append(fullpath + '/segmentedImage.png')
+                cellpose_path_list.append(fullpath + '/cellposeSegmentedImage.png')
+                cellpose_path_list_act.append(fullpath + '/cellposeActualImage.png')
+else:
+    root_folder = "VeronicaProjectLimited"
+    image_path_list = []
+    actual_path_list = []
+    all_image_path_list = []
+    cellpose_path_list = []
+    cellpose_path_list_act = []
+    for img_name in os.listdir(root_folder):
+        # print (img_name)
+        if 'raw' in img_name:
+            image_path_list.append(root_folder + "/" + img_name)
+            actual_path_list.append(root_folder + "/" + img_name.replace("raw", "norm"))
+
+    # st.write(actual_path_list)
+
+
+
+
+# dfg = pd.DataFrame({"image_path_list": image_path_list, "actual_path_list": actual_path_list,
+#                    "cellpose_path_list": cellpose_path_list, "cellpose_path_list_act": cellpose_path_list_act})
 
 # dfg['newname'] = df["image_path_list"].map(lambda x: os.path.basename(x).replace("A1", "A01"))
 
@@ -91,16 +111,20 @@ if True:
 
     num_page = st.slider('page', 0, len(image_path_list)-1, 0, key='slider')
     # for num_page, img_folder in enumerate(list_of_image_folders):
-    if os.path.exists(cellpose_path_list[num_page]):
+    if len(cellpose_path_list) > num_page and os.path.exists(cellpose_path_list[num_page]):
         selc = st.checkbox("View Blue channel (only)")
     if True:
         col3, col4 = st.columns([1, 1])
-        col4.write("Cellprofiler segmented image")
-        col3.write(os.path.basename(Path(actual_path_list[num_page]).parent))
+        if selectchannel == "DAPI":
+            col4.write("Cellprofiler segmented image")
+            col3.write(os.path.basename(Path(actual_path_list[num_page]).parent))
+        else:
+            col4.write("ACS segmented image")
+            col3.write(os.path.basename(Path(actual_path_list[num_page]).parent))
         target_image_path = image_path_list[num_page]
         col4.image(actual_path_list[num_page])
         col3.image(image_path_list[num_page])
-        if os.path.exists(cellpose_path_list[num_page]):
+        if len(cellpose_path_list) > num_page and os.path.exists(cellpose_path_list[num_page]):
             col4.write("Cellpose segmented image")
             col4.image(cellpose_path_list[num_page])
             if selc:
