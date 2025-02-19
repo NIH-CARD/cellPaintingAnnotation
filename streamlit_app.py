@@ -7,11 +7,12 @@ import os
 from pathlib import Path
 import streamlit as st
 from glob import glob
+import matplotlib.pyplot as plt
 import pickle 
 from streamlit_image_annotation import detection
 import json
 # st.set_page_config(layout="wide")
-
+import nd2
 root_folder = "Visualization_DAPI_INSPECTION"
 
 selectchannel = st.selectbox("Select channel", ["DAPI", "NEFL"])
@@ -44,7 +45,7 @@ if selectchannel == "DAPI":
 
     selectedplate = st.selectbox("Select plate",
                                  indipl.split("\n"))  # ["INDI00003D", "INDI00004D", "INDI00005D", "INDI00007D"]
-
+    selectedplate = selectedplate.strip()
 
     image_path_list = []
     actual_path_list = []
@@ -58,12 +59,26 @@ if selectchannel == "DAPI":
             if selectedplate in fullpath:
                 all_image_path_list.append(fullpath + '/actualImage.png')
             if selectedplate in fullpath:
-                image_path_list.append(fullpath + '/actualImage.png')
-                actual_path_list.append(fullpath + '/segmentedImage.png')
-                cellpose_path_list.append(fullpath + '/cellposeSegmentedImage.png')
-                cellpose_path_list_act.append(fullpath + '/cellposeActualImage.png')
+                st.write("cellposeOutput/" + os.path.basename(fullpath) + "_cellposeSegmentedImage.png")
+
+                if os.path.exists("cellposeOutput/" + os.path.basename(fullpath) + "_cellposeSegmentedImage.png"):
+
+                    # image_path_list.append(fullpath + '/actualImage.png')
+                    # actual_path_list.append(fullpath + '/segmentedImage.png')
+
+                    image_path_list.append("cellposeOutput/" + os.path.basename(fullpath) + "_cellposeSegmentedImage.png")
+                    actual_path_list.append("cellposeOutput/" + os.path.basename(fullpath) + "_cellposeSegmentedImage.png")
+
+                    # st.write(fullpath)
+                    # if os.path.exists("cellposeOutput/" + os.path.basename(fullpath) + "_cellposeSegmentedImage.png"):
+                    cellpose_path_list.append("cellposeOutput/" + os.path.basename(fullpath) + "_cellposeSegmentedImage.png")
+                    cellpose_path_list_act.append("cellposeOutput/" + os.path.basename(fullpath) + "_cellposeSegmentedImage.png")
+
+                    # cellpose_path_list.append(fullpath + '/cellposeSegmentedImage.png')
+                    # cellpose_path_list_act.append(fullpath + '/cellposeActualImage.png')
 else:
     root_folder = "VeronicaProjectLimited"
+    root_folder = "VeronicaProjectLimitedOptimize"
     image_path_list = []
     actual_path_list = []
     all_image_path_list = []
@@ -77,8 +92,8 @@ else:
 
     # st.write(actual_path_list)
 
-
-
+st.write(len(actual_path_list), len(image_path_list))
+st.write(cellpose_path_list)
 
 # dfg = pd.DataFrame({"image_path_list": image_path_list, "actual_path_list": actual_path_list,
 #                    "cellpose_path_list": cellpose_path_list, "cellpose_path_list_act": cellpose_path_list_act})
@@ -113,17 +128,51 @@ if True:
     # for num_page, img_folder in enumerate(list_of_image_folders):
     if len(cellpose_path_list) > num_page and os.path.exists(cellpose_path_list[num_page]):
         selc = st.checkbox("View Blue channel (only)")
+
+
+    def saveFigure(image, location):
+        plt.figure(figsize=(40, 40))
+        plt.imshow(image, cmap=plt.cm.gray)
+        plt.axis('off')
+        plt.savefig(str(location) + '.png', bbox_inches='tight')
+        plt.clf()
+        plt.cla()
+        plt.close()
+
     if True:
         col3, col4 = st.columns([1, 1])
+
+        target_image_path = image_path_list[num_page]
+
         if selectchannel == "DAPI":
             col4.write("Cellprofiler segmented image")
             col3.write(os.path.basename(Path(actual_path_list[num_page]).parent))
+            col4.image(actual_path_list[num_page])
+            col3.image(image_path_list[num_page])
         else:
             col4.write("ACS segmented image")
-            col3.write(os.path.basename(Path(actual_path_list[num_page]).parent))
-        target_image_path = image_path_list[num_page]
-        col4.image(actual_path_list[num_page])
-        col3.image(image_path_list[num_page])
+            col3.write('_Pt'+os.path.basename(os.path.basename(actual_path_list[num_page])).split("_Channel")[0].split("_Pt")[-1])
+            aname = os.path.basename(actual_path_list[num_page]).split('488_')[-1].replace(".png", ".nd2")
+            col4.image(actual_path_list[num_page])
+            col3.image(image_path_list[num_page])
+            if os.path.exists("++BGM++20240915_142754/240915_FISH3_fromFISH2BPpipeline_clean_000_" + aname):
+                my_array = nd2.imread("++BGM++20240915_142754/240915_FISH3_fromFISH2BPpipeline_clean_000_" + aname)
+
+                # @st.cache(suppress_st_warning=True)
+                def plot_cache(aname):
+                    if os.path.exists("nikonIMAGES/" + aname + '.png'):
+                        return "nikonIMAGES/" + aname + '.png'
+                    my_array = nd2.imread("++BGM++20240915_142754/240915_FISH3_fromFISH2BPpipeline_clean_000_" + aname)
+                    fig, ax = plt.subplots(figsize=(40, 40))
+                    plt.imshow(my_array[4, 1, :, :], cmap=plt.cm.gray)
+                    plt.axis('off')
+                    fig.savefig("nikonIMAGES/" + aname + '.png', bbox_inches='tight')
+                    return "nikonIMAGES/" + aname + '.png'
+                # col4.write("++BGM++20240915_142754/240915_FISH3_fromFISH2BPpipeline_clean_000_" + aname ) # f"{my_array[4, 1, :, :].sum()} {(my_array[4, 1, :, :]==1).sum()}")
+                col4.write("Nikon software")
+                col4.image(plot_cache(aname))
+            # col3.image(my_array[5, 1, :, :])
+
         if len(cellpose_path_list) > num_page and os.path.exists(cellpose_path_list[num_page]):
             col4.write("Cellpose segmented image")
             col4.image(cellpose_path_list[num_page])
